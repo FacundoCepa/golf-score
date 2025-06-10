@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El Parque Golf Club</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script defer>
+    document.addEventListener("DOMContentLoaded", () => {
+      const app = document.getElementById("app");
+
+      const hoyos = [
+        { num: 1, par: 5, distancia: 490, tee: "Blanco" },
+        { num: 2, par: 3, distancia: 110, tee: "Blanco" },
+        { num: 3, par: 4, distancia: 306, tee: "Blanco" },
+        { num: 4, par: 4, distancia: 317, tee: "Blanco" },
+        { num: 5, par: 4, distancia: 295, tee: "Blanco" },
+        { num: 6, par: 4, distancia: 250, tee: "Blanco" },
+        { num: 7, par: 4, distancia: 435, tee: "Amarillo" },
+        { num: 8, par: 3, distancia: 110, tee: "Amarillo" },
+        { num: 9, par: 4, distancia: 306, tee: "Amarillo" },
+        { num: 10, par: 4, distancia: 285, tee: "Amarillo" },
+        { num: 11, par: 4, distancia: 240, tee: "Amarillo" },
+        { num: 12, par: 3, distancia: 155, tee: "Amarillo" },
+        { num: 13, par: 5, distancia: 490, tee: "Azul" },
+        { num: 14, par: 3, distancia: 110, tee: "Azul" },
+        { num: 15, par: 4, distancia: 240, tee: "Azul" },
+        { num: 16, par: 4, distancia: 285, tee: "Azul" },
+        { num: 17, par: 4, distancia: 240, tee: "Azul" },
+        { num: 18, par: 4, distancia: 250, tee: "Azul" }
+      ];
+
+      let jugador = { nombre: '', handicap: 0 };
+      let scores = Array(hoyos.length).fill().map(() => ({ golpes: '', putts: '', fairway: false, green: false }));
+      let hoyoActual = -1;
+
+      function renderInicio() {
+        app.innerHTML = `
+          <div class="hole">
+            <h2>Inicio de Ronda</h2>
+            <label>Nombre y Apellido: <input type="text" id="nombre" /></label>
+            <label>Handicap: <input type="number" id="handicap" value="0" min="0" /></label>
+            <div style="text-align:center; margin-top: 20px;">
+              <button onclick="iniciarRonda()">Comenzar</button>
+              <button onclick="verHistorial()">Ver Historial</button>
+              <button onclick="verClasificacion()">Ver Clasificación</button>
+            </div>
+          </div>
+        `;
+      }
+
+      window.iniciarRonda = function () {
+        jugador.nombre = document.getElementById("nombre").value.trim();
+        jugador.handicap = parseInt(document.getElementById("handicap").value) || 0;
+        hoyoActual = 0;
+        renderHoyo();
+      }
+
+      function renderHoyo() {
+        const h = hoyos[hoyoActual];
+        const s = scores[hoyoActual];
+        app.innerHTML = `
+          <div class="hole">
+            <h2>Hoyo ${h.num} - Par ${h.par}</h2>
+            <p><strong>Tee:</strong> ${h.tee} - <strong>Distancia:</strong> ${h.distancia} yds</p>
+            <label>Golpes: <input type="number" id="golpes" value="${s.golpes}" min="1" /></label>
+            <label>Putts: <input type="number" id="putts" value="${s.putts}" min="0" /></label>
+            ${h.par !== 3 ? '<label><input type="checkbox" id="fairway" ' + (s.fairway ? 'checked' : '') + '/> Fairway en regulación</label>' : ''}
+            <label><input type="checkbox" id="green" ${s.green ? 'checked' : ''}/> Green en regulación</label>
+            <div style="text-align:center; margin-top: 20px;">
+              ${hoyoActual > 0 ? '<button onclick="anterior()">Anterior</button>' : ''}
+              ${hoyoActual < hoyos.length - 1 ? '<button onclick="siguiente()">Siguiente</button>' : '<button onclick="terminar()">Finalizar Ronda</button>'}
+            </div>
+          </div>
+        `;
+        document.getElementById("golpes").addEventListener("input", e => scores[hoyoActual].golpes = +e.target.value);
+        document.getElementById("putts").addEventListener("input", e => scores[hoyoActual].putts = +e.target.value);
+        if (h.par !== 3) document.getElementById("fairway").addEventListener("change", e => scores[hoyoActual].fairway = e.target.checked);
+        document.getElementById("green").addEventListener("change", e => scores[hoyoActual].green = e.target.checked);
+      }
+
+      window.siguiente = function () {
+        if (hoyoActual < hoyos.length - 1) {
+          hoyoActual++;
+          renderHoyo();
+        }
+      }
+
+      window.anterior = function () {
+        if (hoyoActual > 0) {
+          hoyoActual--;
+          renderHoyo();
+        }
+      }
+
+      window.terminar = function () {
+        const totalGolpes = scores.reduce((acc, s) => acc + (+s.golpes || 0), 0);
+        const totalPutts = scores.reduce((acc, s) => acc + (+s.putts || 0), 0);
+        const fairways = scores.filter((s, i) => hoyos[i].par !== 3 && s.fairway).length;
+        const greens = scores.filter(s => s.green).length;
+        const neto = totalGolpes - jugador.handicap;
+
+        const fecha = new Date().toISOString();
+
+        const tarjetaHTML = `
+          <div class="hole">
+            <h2>Tarjeta Final</h2>
+            <p><strong>Jugador:</strong> ${jugador.nombre}</p>
+            <p><strong>Handicap:</strong> ${jugador.handicap}</p>
+            <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString()}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Hoyo</th>
+                  ${hoyos.map(h => `<th>${h.num}</th>`).join('')}
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Par</td>
+                  ${hoyos.map(h => `<td>${h.par}</td>`).join('')}
+                  <td>${hoyos.reduce((acc, h) => acc + h.par, 0)}</td>
+                </tr>
+                <tr>
+                  <td>Golpes</td>
+                  ${scores.map(s => `<td>${s.golpes || '-'}</td>`).join('')}
+                  <td><strong>${totalGolpes}</strong></td>
+                </tr>
+                <tr>
+                  <td>Putts</td>
+                  ${scores.map(s => `<td>${s.putts || '-'}</td>`).join('')}
+                  <td>${totalPutts}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p><strong>Fairways en regulación:</strong> ${fairways}</p>
+            <p><strong>Greens en regulación:</strong> ${greens}</p>
+            <p><strong>Score Gross:</strong> ${totalGolpes}</p>
+            <p><strong>Score Neto (Gross - Handicap):</strong> ${neto}</p>
+            <div style="text-align:center; margin-top: 20px;">
+              <button onclick="navigator.share ? navigator.share({ title: 'Tarjeta de Score', text: document.body.innerText }) : alert('Tu navegador no permite compartir esta tarjeta.')">Compartir Tarjeta</button>
+              <button onclick="location.reload()">Nueva Ronda</button>
+            </div>
+          </div>
+        `;
+
+        app.innerHTML = tarjetaHTML;
+
+        let historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
+        historial.push({ jugador: jugador.nombre, handicap: jugador.handicap, gross: totalGolpes, neto, fecha });
+        localStorage.setItem("historialScores", JSON.stringify(historial));
+      }
+
+      window.verHistorial = function () {
+        const historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
+        historial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        const tabla = historial.map(entry => `
+          <tr>
+            <td>${entry.jugador}</td>
+            <td>${entry.handicap}</td>
+            <td>${entry.gross}</td>
+            <td>${entry.neto}</td>
+            <td>${new Date(entry.fecha).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+
+        app.innerHTML = `
+          <div class="hole">
+            <h2>Historial de Scores</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Jugador</th>
+                  <th>Handicap</th>
+                  <th>Gross</th>
+                  <th>Neto</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>${tabla}</tbody>
+            </table>
+            <div style="text-align:center; margin-top: 20px;">
+              <button onclick="renderInicio()">Volver</button>
+            </div>
+          </div>
+        `;
+      }
+
+      window.verClasificacion = function () {
+        const historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
+        historial.sort((a, b) => a.neto - b.neto);
+
+        const tabla = historial.map((entry, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${entry.jugador}</td>
+            <td>${entry.handicap}</td>
+            <td>${entry.gross}</td>
+            <td>${entry.neto}</td>
+            <td>${new Date(entry.fecha).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+
+        app.innerHTML = `
+          <div class="hole">
+            <h2>Clasificación General</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Jugador</th>
+                  <th>Handicap</th>
+                  <th>Gross</th>
+                  <th>Neto</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>${tabla}</tbody>
+            </table>
+            <div style="text-align:center; margin-top: 20px;">
+              <button onclick="renderInicio()">Volver</button>
+            </div>
+          </div>
+        `;
+      }
+
+      renderInicio();
+      window.renderInicio = renderInicio;
+    });
+  </script>
+  <style>
+    :root {
+      --primary-color: #1e3a8a;
+      --accent-color: #10b981;
+      --light-bg: #f9fafb;
+      --border-radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      background-color: var(--light-bg);
+      color: #111827;
+    }
+
+    h1, h2 {
+      color: var(--primary-color);
+      text-align: center;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      margin: 8px 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #3b82f6;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 70%;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      border: 1px solid #d1d5db;
+      margin-left: 5px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+      font-weight: 500;
+    }
+
+    .hole {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    ol {
+      padding-left: 20px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>

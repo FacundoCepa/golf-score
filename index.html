@@ -10,43 +10,112 @@
       const app = document.getElementById("app");
 
       const hoyos = [
-        { num: 1, par: 5, distancia: 490, tee: "Blanco" },
-        { num: 2, par: 3, distancia: 110, tee: "Blanco" },
-        { num: 3, par: 4, distancia: 306, tee: "Blanco" },
-        { num: 4, par: 4, distancia: 317, tee: "Blanco" },
-        { num: 5, par: 4, distancia: 295, tee: "Blanco" },
-        { num: 6, par: 4, distancia: 250, tee: "Blanco" },
-        { num: 7, par: 4, distancia: 435, tee: "Amarillo" },
-        { num: 8, par: 3, distancia: 110, tee: "Amarillo" },
-        { num: 9, par: 4, distancia: 306, tee: "Amarillo" },
-        { num: 10, par: 4, distancia: 285, tee: "Amarillo" },
-        { num: 11, par: 4, distancia: 240, tee: "Amarillo" },
-        { num: 12, par: 3, distancia: 155, tee: "Amarillo" },
-        { num: 13, par: 5, distancia: 490, tee: "Azul" },
-        { num: 14, par: 3, distancia: 110, tee: "Azul" },
-        { num: 15, par: 4, distancia: 240, tee: "Azul" },
-        { num: 16, par: 4, distancia: 285, tee: "Azul" },
-        { num: 17, par: 4, distancia: 240, tee: "Azul" },
-        { num: 18, par: 4, distancia: 250, tee: "Azul" }
+        { num: 1, par: 5, distancia: 490, tee: "Blanco", handicap: 1 },
+        { num: 2, par: 3, distancia: 110, tee: "Blanco", handicap: 17 },
+        { num: 3, par: 4, distancia: 306, tee: "Blanco", handicap: 11 },
+        { num: 4, par: 4, distancia: 317, tee: "Blanco", handicap: 5 },
+        { num: 5, par: 4, distancia: 295, tee: "Blanco", handicap: 13 },
+        { num: 6, par: 4, distancia: 250, tee: "Blanco", handicap: 15 },
+        { num: 7, par: 4, distancia: 435, tee: "Amarillo", handicap: 3 },
+        { num: 8, par: 3, distancia: 110, tee: "Amarillo", handicap: 9 },
+        { num: 9, par: 4, distancia: 306, tee: "Amarillo", handicap: 7 },
+        { num: 10, par: 4, distancia: 285, tee: "Amarillo", handicap: 8 },
+        { num: 11, par: 4, distancia: 240, tee: "Amarillo", handicap: 14 },
+        { num: 12, par: 3, distancia: 155, tee: "Amarillo", handicap: 18 },
+        { num: 13, par: 5, distancia: 490, tee: "Azul", handicap: 2 },
+        { num: 14, par: 3, distancia: 110, tee: "Azul", handicap: 16 },
+        { num: 15, par: 4, distancia: 240, tee: "Azul", handicap: 12 },
+        { num: 16, par: 4, distancia: 285, tee: "Azul", handicap: 6 },
+        { num: 17, par: 4, distancia: 240, tee: "Azul", handicap: 10 },
+        { num: 18, par: 4, distancia: 250, tee: "Azul", handicap: 4 }
       ];
 
       let jugador = { nombre: '', handicap: 0 };
       let scores = Array(hoyos.length).fill().map(() => ({ golpes: '', putts: '', fairway: false, green: false }));
       let hoyoActual = -1;
+      let modoActual = '';
 
-      function renderInicio() {
+      // Función para obtener fecha actual formateada
+      function obtenerFechaHoy() {
+        return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      }
+
+      function renderMenuPrincipal() {
         app.innerHTML = `
           <div class="hole">
-            <h2>Inicio de Ronda</h2>
-            <label style="text-align:center;">Nombre y Apellido: <input type="text" id="nombre" /></label>
-            <div style="text-align: center; margin: 10px 0;">
-            <label for="handicap" style="display: block; margin-bottom: 6px;">Handicap:</label>
-            <input type="number" id="handicap" value="0" min="0" />
+            <h1>🏌️ El Parque Golf Club</h1>
+            <div class="menu-principal">
+              <button class="menu-btn" onclick="seleccionarModo('propia')">
+                <span class="menu-icon">📊</span>
+                <div>
+                  <strong>Tarjeta Propia</strong>
+                  <small>Lleva tu propia tarjeta con estadísticas completas</small>
+                </div>
+              </button>
+              
+              <button class="menu-btn" onclick="seleccionarModo('torneo')">
+                <span class="menu-icon">🏆</span>
+                <div>
+                  <strong>Modo Torneo</strong>
+                  <small>Lleva la tarjeta de un contrincante</small>
+                </div>
+              </button>
+              
+              <button class="menu-btn" onclick="verLeaderboard()">
+                <span class="menu-icon">🥇</span>
+                <div>
+                  <strong>Leaderboard</strong>
+                  <small>Clasificación por fecha de torneo</small>
+                </div>
+              </button>
+              
+              <button class="menu-btn" onclick="verScoreHistorico()">
+                <span class="menu-icon">📈</span>
+                <div>
+                  <strong>Score Histórico</strong>
+                  <small>Récords históricos de la cancha</small>
+                </div>
+              </button>
             </div>
+          </div>
+        `;
+      }
+
+      window.seleccionarModo = function(modo) {
+        modoActual = modo;
+        renderConfiguracion();
+      }
+
+      function renderConfiguracion() {
+        const esModoTorneo = modoActual === 'torneo';
+        const titulo = esModoTorneo ? 'Configuración Modo Torneo' : 'Configuración Tarjeta Propia';
+        const nombreLabel = esModoTorneo ? 'Nombre del Contrincante:' : 'Tu Nombre y Apellido:';
+        
+        app.innerHTML = `
+          <div class="hole">
+            <h2>${titulo}</h2>
+            ${esModoTorneo ? '<p class="torneo-info">💡 Llevarás la tarjeta oficial de tu contrincante</p>' : ''}
+            
+            <label style="text-align:center;">
+              ${nombreLabel}
+              <input type="text" id="nombre" placeholder="Ingresa el nombre completo" />
+            </label>
+            
+            <div style="text-align: center; margin: 10px 0;">
+              <label for="handicap" style="display: block; margin-bottom: 6px;">Handicap:</label>
+              <input type="number" id="handicap" value="0" min="0" max="54" />
+            </div>
+
+            ${esModoTorneo ? `
+              <div style="text-align: center; margin: 15px 0;">
+                <label for="fechaTorneo" style="display: block; margin-bottom: 6px;">Fecha del Torneo:</label>
+                <input type="date" id="fechaTorneo" value="${obtenerFechaHoy()}" />
+              </div>
+            ` : ''}
+            
             <div style="text-align:center; margin-top: 20px;">
-              <button onclick="iniciarRonda()">Comenzar</button>
-              <button onclick="verHistorial()">Ver Historial</button>
-              <button onclick="verClasificacion()">Ver Clasificación</button>
+              <button onclick="iniciarRonda()">Comenzar Ronda</button>
+              <button onclick="renderMenuPrincipal()" style="background-color: #6b7280;">Volver</button>
             </div>
           </div>
         `;
@@ -55,69 +124,102 @@
       window.iniciarRonda = function () {
         jugador.nombre = document.getElementById("nombre").value.trim();
         jugador.handicap = parseInt(document.getElementById("handicap").value) || 0;
+        
+        if (!jugador.nombre) {
+          alert('Por favor ingresa un nombre');
+          return;
+        }
+
+        if (modoActual === 'torneo') {
+          jugador.fechaTorneo = document.getElementById("fechaTorneo").value;
+        }
+
         hoyoActual = 0;
+        scores = Array(hoyos.length).fill().map(() => ({ golpes: '', putts: '', fairway: false, green: false }));
         renderHoyo();
       }
 
       function renderHoyo() {
         const h = hoyos[hoyoActual];
         const s = scores[hoyoActual];
+        const esModoTorneo = modoActual === 'torneo';
+        
         app.innerHTML = `
           <div class="hole">
-            <h2>Hoyo ${h.num} - Par ${h.par}</h2>
-            <p><strong>Tee:</strong> ${h.tee} - <strong>Distancia:</strong> ${h.distancia} yds</p>
-           <label>Golpes: 
-                <button id="golpes-decr">-</button>
-                <span id="golpes-valor">${s.golpes || 0}</span>
-                <button id="golpes-incr">+</button>
+            <div class="hoyo-header">
+              <h2>Hoyo ${h.num} - Par ${h.par}</h2>
+              <div class="hoyo-info">
+                <span><strong>Tee:</strong> ${h.tee}</span>
+                <span><strong>Distancia:</strong> ${h.distancia} yds</span>
+                <span><strong>Hcp:</strong> ${h.handicap}</span>
+              </div>
+            </div>
+
+            <div class="player-info">
+              <strong>${esModoTorneo ? 'Contrincante:' : 'Jugador:'}</strong> ${jugador.nombre}
+            </div>
+           
+            <label>Golpes: 
+              <button id="golpes-decr">-</button>
+              <span id="golpes-valor">${s.golpes || 0}</span>
+              <button id="golpes-incr">+</button>
             </label>
-      
-            <label>Putts: 
+
+            ${!esModoTorneo ? `
+              <label>Putts: 
                 <button id="putts-decr">-</button>
                 <span id="putts-valor">${s.putts || 0}</span>
                 <button id="putts-incr">+</button>
-            </label>
-            ${h.par !== 3 ? '<label><input type="checkbox" id="fairway" ' + (s.fairway ? 'checked' : '') + '/> Fairway en regulación</label>' : ''}
-            <label><input type="checkbox" id="green" ${s.green ? 'checked' : ''}/> Green en regulación</label>
+              </label>
+              ${h.par !== 3 ? '<label><input type="checkbox" id="fairway" ' + (s.fairway ? 'checked' : '') + '/> Fairway en regulación</label>' : ''}
+              <label><input type="checkbox" id="green" ${s.green ? 'checked' : ''}/> Green en regulación</label>
+            ` : ''}
+            
             <div style="text-align:center; margin-top: 20px;">
               ${hoyoActual > 0 ? '<button onclick="anterior()">Anterior</button>' : ''}
               ${hoyoActual < hoyos.length - 1 ? '<button onclick="siguiente()">Siguiente</button>' : '<button onclick="terminar()">Finalizar Ronda</button>'}
             </div>
           </div>
         `;
-         const golpesValor = document.getElementById("golpes-valor");
-  scores[hoyoActual].golpes = s.golpes || 0;
 
-  document.getElementById("golpes-incr").addEventListener("click", () => {
-    scores[hoyoActual].golpes++;
-    golpesValor.textContent = scores[hoyoActual].golpes;
-  });
+        // Event listeners para golpes
+        const golpesValor = document.getElementById("golpes-valor");
+        scores[hoyoActual].golpes = s.golpes || 0;
 
-  document.getElementById("golpes-decr").addEventListener("click", () => {
-    if (scores[hoyoActual].golpes > 1) {
-      scores[hoyoActual].golpes--;
-      golpesValor.textContent = scores[hoyoActual].golpes;
-    }
-  });
+        document.getElementById("golpes-incr").addEventListener("click", () => {
+          scores[hoyoActual].golpes++;
+          golpesValor.textContent = scores[hoyoActual].golpes;
+        });
 
-  // Funciones para actualizar putts
-  const puttsValor = document.getElementById("putts-valor");
-  scores[hoyoActual].putts = s.putts || 0;
+        document.getElementById("golpes-decr").addEventListener("click", () => {
+          if (scores[hoyoActual].golpes > 1) {
+            scores[hoyoActual].golpes--;
+            golpesValor.textContent = scores[hoyoActual].golpes;
+          }
+        });
 
-  document.getElementById("putts-incr").addEventListener("click", () => {
-    scores[hoyoActual].putts++;
-    puttsValor.textContent = scores[hoyoActual].putts;
-  });
+        // Event listeners para modo propio (putts y regulaciones)
+        if (!esModoTorneo) {
+          const puttsValor = document.getElementById("putts-valor");
+          scores[hoyoActual].putts = s.putts || 0;
 
-  document.getElementById("putts-decr").addEventListener("click", () => {
-    if (scores[hoyoActual].putts > 0) {
-      scores[hoyoActual].putts--;
-      puttsValor.textContent = scores[hoyoActual].putts;
-    }
-  });
+          document.getElementById("putts-incr").addEventListener("click", () => {
+            scores[hoyoActual].putts++;
+            puttsValor.textContent = scores[hoyoActual].putts;
+          });
 
-        if (h.par !== 3) document.getElementById("fairway").addEventListener("change", e => scores[hoyoActual].fairway = e.target.checked);
-        document.getElementById("green").addEventListener("change", e => scores[hoyoActual].green = e.target.checked);
+          document.getElementById("putts-decr").addEventListener("click", () => {
+            if (scores[hoyoActual].putts > 0) {
+              scores[hoyoActual].putts--;
+              puttsValor.textContent = scores[hoyoActual].putts;
+            }
+          });
+
+          if (h.par !== 3) {
+            document.getElementById("fairway").addEventListener("change", e => scores[hoyoActual].fairway = e.target.checked);
+          }
+          document.getElementById("green").addEventListener("change", e => scores[hoyoActual].green = e.target.checked);
+        }
       }
 
       window.siguiente = function () {
@@ -135,28 +237,49 @@
       }
 
       window.terminar = function () {
-        const golpesHtml = scores.map((s, i) => {
-         const diff = (s.golpes || 0) - hoyos[i].par;
-         let clase = "";
-         if (diff === -1) clase = "circle";        // 1 por debajo del par
-             else if (diff === 1) clase = "square";    // 1 por encima del par
-            else if (diff >= 2) clase = "double-square"; // 2 o más arriba del par
-         return `<td class="${clase}">${s.golpes || '-'}</td>`;
+        const esModoTorneo = modoActual === 'torneo';
+          const golpesHtml = scores.map((s, i) => {
+          const diff = (s.golpes || 0) - hoyos[i].par;
+          let clase = "";
+          if (diff === -2) clase = "double-circle"; // Eagle
+          else if (diff === -1) clase = "circle";   // Birdie
+          else if (diff === 0) clase = "";          // Par
+          else if (diff === 1) clase = "square";    // Bogey
+          else if (diff >= 2) clase = "double-square"; // Double bogey+
+          return `<td class="${clase}">${s.golpes || '-'}</td>`;
         }).join('');
         const totalGolpes = scores.reduce((acc, s) => acc + (+s.golpes || 0), 0);
         const totalPutts = scores.reduce((acc, s) => acc + (+s.putts || 0), 0);
         const fairways = scores.filter((s, i) => hoyos[i].par !== 3 && s.fairway).length;
         const greens = scores.filter(s => s.green).length;
         const neto = totalGolpes - jugador.handicap;
+        const parTotal = hoyos.reduce((acc, h) => acc + h.par, 0);
 
-        const fecha = new Date().toISOString();
+        const fecha = esModoTorneo ? jugador.fechaTorneo : new Date().toISOString().split('T')[0];
+
+        const estadisticasHtml = !esModoTorneo ? `
+          <tr>
+            <td>Putts</td>
+            ${scores.map(s => `<td>${s.putts || '-'}</td>`).join('')}
+            <td>${totalPutts}</td>
+          </tr>
+        ` : '';
+
+        const resumenHtml = !esModoTorneo ? `
+          <p><strong>Fairways en regulación:</strong> ${fairways}/15</p>
+          <p><strong>Greens en regulación:</strong> ${greens}/18</p>
+        ` : '';
 
         const tarjetaHTML = `
           <div class="hole">
-            <h2>Tarjeta Final</h2>
-            <p><strong>Jugador:</strong> ${jugador.nombre}</p>
-            <p><strong>Handicap:</strong> ${jugador.handicap}</p>
-            <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString()}</p>
+            <h2>Tarjeta ${esModoTorneo ? 'de Torneo' : 'Final'}</h2>
+            <div class="tarjeta-header">
+              <p><strong>${esModoTorneo ? 'Contrincante:' : 'Jugador:'}</strong> ${jugador.nombre}</p>
+              <p><strong>Handicap:</strong> ${jugador.handicap}</p>
+              <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString()}</p>
+              ${esModoTorneo ? '<p class="torneo-badge">🏆 TORNEO</p>' : ''}
+            </div>
+            
             <table>
               <thead>
                 <tr>
@@ -169,186 +292,259 @@
                 <tr>
                   <td>Par</td>
                   ${hoyos.map(h => `<td>${h.par}</td>`).join('')}
-                  <td>${hoyos.reduce((acc, h) => acc + h.par, 0)}</td>
+                  <td>${parTotal}</td>
                 </tr>
                 <tr>
                   <td>Golpes</td>
-                     ${golpesHtml}
+                  ${golpesHtml}
                   <td><strong>${totalGolpes}</strong></td>
                 </tr>
-                <tr>
-                  <td>Putts</td>
-                  ${scores.map(s => `<td>${s.putts || '-'}</td>`).join('')}
-                  <td>${totalPutts}</td>
-                </tr>
+                ${estadisticasHtml}
               </tbody>
             </table>
-            <p><strong>Fairways en regulación:</strong> ${fairways}</p>
-            <p><strong>Greens en regulación:</strong> ${greens}</p>
-            <p><strong>Score Gross:</strong> ${totalGolpes}</p>
-            <p><strong>Score Neto (Gross - Handicap):</strong> ${neto}</p>
+            
+            ${resumenHtml}
+            <div class="score-summary">
+              <p><strong>Score Gross:</strong> ${totalGolpes} (${totalGolpes > parTotal ? '+' : ''}${totalGolpes - parTotal})</p>
+              <p><strong>Score Neto:</strong> ${neto} (${neto > parTotal ? '+' : ''}${neto - parTotal})</p>
+            </div>
+            
             <div style="text-align:center; margin-top: 20px;">
-              <button onclick="navigator.share ? navigator.share({ title: 'Tarjeta de Score', text: document.body.innerText }) : alert('Tu navegador no permite compartir esta tarjeta.')">Compartir Tarjeta</button>
-              <button onclick="location.reload()">Finalizar Ronda</button>
+              <button onclick="guardarYCompartir()">Guardar Tarjeta</button>
+              <button onclick="renderMenuPrincipal()" style="background-color: #6b7280;">Volver al Menú</button>
             </div>
           </div>
         `;
 
         app.innerHTML = tarjetaHTML;
+      }
 
+      window.guardarYCompartir = function() {
+        const esModoTorneo = modoActual === 'torneo';
+        const totalGolpes = scores.reduce((acc, s) => acc + (+s.golpes || 0), 0);
+        const neto = totalGolpes - jugador.handicap;
+        const fecha = esModoTorneo ? jugador.fechaTorneo : new Date().toISOString().split('T')[0];
+
+        // Guardar en historial normal
         let historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
-        historial.push({ jugador: jugador.nombre, handicap: jugador.handicap, gross: totalGolpes, neto, fecha });
+        historial.push({ 
+          jugador: jugador.nombre, 
+          handicap: jugador.handicap, 
+          gross: totalGolpes, 
+          neto, 
+          fecha,
+          modo: modoActual
+        });
         localStorage.setItem("historialScores", JSON.stringify(historial));
+
+        // Si es modo torneo, también guardar en leaderboard
+        if (esModoTorneo) {
+          let torneos = JSON.parse(localStorage.getItem("torneos") || "{}");
+          if (!torneos[fecha]) {
+            torneos[fecha] = [];
+          }
+          torneos[fecha].push({
+            jugador: jugador.nombre,
+            handicap: jugador.handicap,
+            gross: totalGolpes,
+            neto,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem("torneos", JSON.stringify(torneos));
+        }
+
+        alert('¡Tarjeta guardada exitosamente!');
+        renderMenuPrincipal();
       }
 
-      window.verHistorial = function () {
-        const historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
-        historial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      window.verLeaderboard = function() {
+        const torneos = JSON.parse(localStorage.getItem("torneos") || "{}");
+        const fechas = Object.keys(torneos).sort((a, b) => new Date(b) - new Date(a));
 
-        const tabla = historial.map(entry => `
-          <tr>
-            <td>${entry.jugador}</td>
-            <td>${entry.handicap}</td>
-            <td>${entry.gross}</td>
-            <td>${entry.neto}</td>
-            <td>${new Date(entry.fecha).toLocaleDateString()}</td>
-          </tr>
+        if (fechas.length === 0) {
+          app.innerHTML = `
+            <div class="hole">
+              <h2>🏆 Leaderboard de Torneos</h2>
+              <p style="text-align: center; color: #6b7280; margin: 40px 0;">
+                No hay torneos registrados aún.<br>
+                Usa el "Modo Torneo" para empezar a registrar resultados.
+              </p>
+              <div style="text-align:center;">
+                <button onclick="renderMenuPrincipal()">Volver al Menú</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        const fechasHtml = fechas.map(fecha => `
+          <option value="${fecha}">${new Date(fecha).toLocaleDateString()}</option>
         `).join('');
 
         app.innerHTML = `
           <div class="hole">
-            <h2>Historial de Scores</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Jugador</th>
-                  <th>Handicap</th>
-                  <th>Gross</th>
-                  <th>Neto</th>
-                  <th>Fecha</th>
-                </tr>
-              </thead>
-              <tbody>${tabla}</tbody>
-            </table>
+            <h2>🏆 Leaderboard de Torneos</h2>
+            <div style="text-align: center; margin: 20px 0;">
+              <label for="fechaSelect">Seleccionar fecha de torneo:</label>
+              <select id="fechaSelect" onchange="mostrarLeaderboardFecha(this.value)">
+                <option value="">-- Selecciona una fecha --</option>
+                ${fechasHtml}
+              </select>
+            </div>
+            <div id="leaderboardContent"></div>
             <div style="text-align:center; margin-top: 20px;">
-              <button onclick="renderInicio()">Volver</button>
+              <button onclick="renderMenuPrincipal()">Volver al Menú</button>
             </div>
           </div>
         `;
       }
 
-      window.verClasificacion = function () {
-        const historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
-        historial.sort((a, b) => a.neto - b.neto);
+      window.mostrarLeaderboardFecha = function(fecha) {
+        if (!fecha) {
+          document.getElementById("leaderboardContent").innerHTML = "";
+          return;
+        }
 
-        const tabla = historial.map((entry, index) => `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${entry.jugador}</td>
-            <td>${entry.handicap}</td>
-            <td>${entry.gross}</td>
-            <td>${entry.neto}</td>
-            <td>${new Date(entry.fecha).toLocaleDateString()}</td>
-          </tr>
-        `).join('');
+        const torneos = JSON.parse(localStorage.getItem("torneos") || "{}");
+        const participantes = torneos[fecha] || [];
+        
+        // Ordenar por score neto
+        participantes.sort((a, b) => a.neto - b.neto);
+
+        const tabla = participantes.map((entry, index) => {
+          const parTotal = hoyos.reduce((acc, h) => acc + h.par, 0);
+          const diffGross = entry.gross - parTotal;
+          const diffNeto = entry.neto - parTotal;
+          
+          return `
+            <tr class="${index < 3 ? 'podium-' + (index + 1) : ''}">
+              <td class="position">${index + 1}</td>
+              <td>${entry.jugador}</td>
+              <td>${entry.handicap}</td>
+              <td>${entry.gross} (${diffGross > 0 ? '+' : ''}${diffGross})</td>
+              <td class="neto-score">${entry.neto} (${diffNeto > 0 ? '+' : ''}${diffNeto})</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById("leaderboardContent").innerHTML = `
+          <h3>Torneo del ${new Date(fecha).toLocaleDateString()}</h3>
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Jugador</th>
+                <th>Hcp</th>
+                <th>Gross</th>
+                <th>Neto</th>
+              </tr>
+            </thead>
+            <tbody>${tabla}</tbody>
+          </table>
+        `;
+      }
+
+      window.verScoreHistorico = function() {
+        const historial = JSON.parse(localStorage.getItem("historialScores") || "[]");
+        
+        if (historial.length === 0) {
+          app.innerHTML = `
+            <div class="hole">
+              <h2>📈 Score Histórico de la Cancha</h2>
+              <p style="text-align: center; color: #6b7280; margin: 40px 0;">
+                No hay scores registrados aún.
+              </p>
+              <div style="text-align:center;">
+                <button onclick="renderMenuPrincipal()">Volver al Menú</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Obtener récords
+        const parTotal = hoyos.reduce((acc, h) => acc + h.par, 0);
+        const mejorGross = Math.min(...historial.map(h => h.gross));
+        const mejorNeto = Math.min(...historial.map(h => h.neto));
+        const recordGross = historial.find(h => h.gross === mejorGross);
+        const recordNeto = historial.find(h => h.neto === mejorNeto);
+
+        // Últimos 10 scores
+        const ultimosScores = historial
+          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+          .slice(0, 10);
+
+        const tablaUltimos = ultimosScores.map(entry => {
+          const diffGross = entry.gross - parTotal;
+          const diffNeto = entry.neto - parTotal;
+          return `
+            <tr>
+              <td>${entry.jugador}</td>
+              <td>${entry.gross} (${diffGross > 0 ? '+' : ''}${diffGross})</td>
+              <td>${entry.neto} (${diffNeto > 0 ? '+' : ''}${diffNeto})</td>
+              <td>${new Date(entry.fecha).toLocaleDateString()}</td>
+              <td><span class="modo-badge ${entry.modo || 'propia'}">${entry.modo === 'torneo' ? 'Torneo' : 'Propio'}</span></td>
+            </tr>
+          `;
+        }).join('');
 
         app.innerHTML = `
           <div class="hole">
-            <h2>Clasificación General</h2>
+            <h2>📈 Score Histórico de la Cancha</h2>
+            
+            <div class="records-section">
+              <h3>🏆 Récords de la Cancha</h3>
+              <div class="record-cards">
+                <div class="record-card">
+                  <h4>Mejor Score Gross</h4>
+                  <p class="record-score">${mejorGross} (${mejorGross - parTotal > 0 ? '+' : ''}${mejorGross - parTotal})</p>
+                  <p class="record-player">${recordGross.jugador}</p>
+                  <p class="record-date">${new Date(recordGross.fecha).toLocaleDateString()}</p>
+                </div>
+                <div class="record-card">
+                  <h4>Mejor Score Neto</h4>
+                  <p class="record-score">${mejorNeto} (${mejorNeto - parTotal > 0 ? '+' : ''}${mejorNeto - parTotal})</p>
+                  <p class="record-player">${recordNeto.jugador}</p>
+                  <p class="record-date">${new Date(recordNeto.fecha).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <h3>📋 Últimos 10 Scores</h3>
             <table>
               <thead>
                 <tr>
-                  <th>#</th>
                   <th>Jugador</th>
-                  <th>Handicap</th>
                   <th>Gross</th>
                   <th>Neto</th>
                   <th>Fecha</th>
+                  <th>Modo</th>
                 </tr>
               </thead>
-              <tbody>${tabla}</tbody>
+              <tbody>${tablaUltimos}</tbody>
             </table>
+            
             <div style="text-align:center; margin-top: 20px;">
-              <button onclick="renderInicio()">Volver</button>
+              <button onclick="renderMenuPrincipal()">Volver al Menú</button>
             </div>
           </div>
         `;
       }
 
-      renderInicio();
-      window.renderInicio = renderInicio;
+      // Inicializar la aplicación
+      renderMenuPrincipal();
+      window.renderMenuPrincipal = renderMenuPrincipal;
     });
   </script>
   <style>
-    .circle {
-  position: relative;
-  font-weight: bold;
-  color: var(--accent-color);
-  padding: 0 0.6em; /* espacio para que no tape el borde */
-}
-.circle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 1.6em;
-  height: 1.6em;
-  border: 2.5px solid var(--accent-color);
-  border-radius: 50%;
-  pointer-events: none;
-  box-sizing: border-box;
-  z-index: -1; /* cambio a positivo */
-  background-color: white; /* para que se vea el círculo */
-}
-
-.square {
-  position: relative;
-  font-weight: bold;
-  color: #d97706; /* naranja oscuro */
-  padding: 0 0.6em;
-}
-.square::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 1.6em;
-  height: 1.6em;
-  border: 2.5px solid #d97706;
-  pointer-events: none;
-  box-sizing: border-box;
-  z-index: -1; /* cambio a positivo */
-  background-color: white;
-}
-
-.double-square {
-  position: relative;
-  font-weight: bold;
-  color: #b91c1c; /* rojo oscuro */
-  padding: 0 0.6em;
-}
-.double-square::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 1.6em;
-  height: 1.6em;
-  border: 2.5px solid #b91c1c;
-  pointer-events: none;
-  box-sizing: border-box;
-  z-index: -1; /* cambio a positivo */
-  box-shadow: 0 0 0 3px #b91c1c inset;
-  background-color: white;
-}
     :root {
       --primary-color: #1e3a8a;
       --accent-color: #10b981;
       --light-bg: #f9fafb;
       --border-radius: 12px;
+      --gold: #fbbf24;
+      --silver: #9ca3af;
+      --bronze: #d97706;
     }
 
     body {
@@ -365,72 +561,385 @@
       text-align: center;
     }
 
-    button {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      margin: 8px 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 30px;
     }
 
-    button:hover {
-      background-color: #3b82f6;
+    /* Menú Principal */
+    .menu-principal {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
 
-    input[type="number"], input[type="text"] {
-      width: 70%;
-      padding: 8px;
-      border-radius: var(--border-radius);
-      border: 1px solid #d1d5db;
-      margin-left: 5px;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0;
-      font-weight: 500;
-    }
-
-    .hole {
-      background: white;
-      border-radius: var(--border-radius);
+    .menu-btn {
+      display: flex;
+      align-items: center;
+      gap: 15px;
       padding: 20px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      text-align: left;
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: var(--border-radius);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #374151;
+    }
+
+    .menu-btn:hover {
+      border-color: var(--primary-color);
+      background-color: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+    }
+
+    .menu-icon {
+      font-size: 2rem;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .menu-btn strong {
+      display: block;
+      color: var(--primary-color);
+      margin-bottom: 4px;
+    }
+
+    .menu-btn small {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    /* Hoyo Header */
+    .hoyo-header {
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 15px;
       margin-bottom: 20px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      border-radius: var(--border-radius);
-      overflow: hidden;
+    .hoyo-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #6b7280;
     }
 
-    th, td {
+    .player-info {
+      background: #f3f4f6;
       padding: 10px;
-      border-bottom: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
-    th {
-      background-color: var(--primary-color);
+    /* Tarjeta Final */
+    .tarjeta-header {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .torneo-badge {
+      background: var(--gold);
       color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 5px;
     }
 
-    tr:last-child td {
-      border-bottom: none;
+    .torneo-info {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      color: #92400e;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 20px;
     }
 
-    ol {
-      padding-left: 20px;
-      text-align: left;
+    .score-summary {
+      background: #f0f9ff;
+      border: 1px solid #0ea5e9;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
     }
-  </style>
+
+    /* Leaderboard */
+
+    /* Leaderboard */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.leaderboard-table th {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+}
+
+.leaderboard-table .position {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.leaderboard-table .neto-score {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+/* Podium styles */
+.podium-1 {
+  background-color: #fef3c7;
+  border-left: 4px solid var(--gold);
+}
+
+.podium-1 .position {
+  color: var(--gold);
+}
+
+.podium-2 {
+  background-color: #f3f4f6;
+  border-left: 4px solid var(--silver);
+}
+
+.podium-2 .position {
+  color: var(--silver);
+}
+
+.podium-3 {
+  background-color: #fef2e2;
+  border-left: 4px solid var(--bronze);
+}
+
+.podium-3 .position {
+  color: var(--bronze);
+}
+
+/* Records Section */
+.records-section {
+  margin-bottom: 30px;
+}
+
+.record-cards {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.record-card {
+  flex: 1;
+  min-width: 200px;
+  background: white;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.record-card h4 {
+  color: var(--primary-color);
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.record-score {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  margin: 10px 0;
+}
+
+.record-player {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
+.record-date {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* Modo Badge */
+.modo-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.modo-badge.propia {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.modo-badge.torneo {
+  background: #fef3c7;
+  color: #92400e;
+}
+/* Tabla con cuadrícula */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: white;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+table th,
+table td {
+  padding: 8px 4px;
+  text-align: center;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+table th {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+table tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* Estilos de scoring */
+.double-circle {
+  position: relative;
+  font-weight: bold;
+  color: #dc2626;
+}
+
+.double-circle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border: 2px solid #dc2626;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.double-circle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 1px solid #dc2626;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.circle {
+  position: relative;
+  font-weight: bold;
+  color: #dc2626;
+}
+
+.circle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border: 2px solid #dc2626;
+  border-radius: 50%;
+}
+
+.square {
+  position: relative;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.square::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border: 2px solid #1f2937;
+}
+
+.double-square {
+  position: relative;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.double-square::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border: 2px solid #1f2937;
+  z-index: 1;
+}
+
+.double-square::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border: 1px solid #1f2937;
+  z-index: 2;
+}
+
+/* Asegurar que el número esté visible */
+.circle,
+.double-circle,
+.square,
+.double-square {
+  z-index: 3;
+}
+ </style>
 </head>
 <body>
   <div id="app"></div>
